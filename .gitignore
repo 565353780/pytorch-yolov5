@@ -20,7 +20,6 @@
 *.data
 *.json
 *.cfg
-!sample_images/*
 !cfg/yolov3*.cfg
 
 storage.googleapis.com
