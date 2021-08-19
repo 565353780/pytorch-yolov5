@@ -51,8 +51,8 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
 @torch.no_grad()
 def detect():
-    weights='yolov5l6.pt' # model.pt path(s)
-    source='../jittor-yolo/sample_images'
+    weights='./runs/train/exp/weights/best.pt' # model.pt path(s)
+    #  source='/home/chli/baidu/car_dataset/unmasked/'
     imgsz=640 # inference size (pixels)
 
     # Initialize
@@ -77,12 +77,21 @@ def detect():
     if pt and device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
 
-    image_folder_path = "./sample_images"
+    image_folder_path = '/home/chli/baidu/car_dataset/unmasked/'
 
     image_file_name_list = os.listdir(image_folder_path)
 
+    save_index = 0
+    if not os.path.exists("/home/chli/baidu/output/"):
+        os.mkdir("/home/chli/baidu/output/")
+
     for image_file_name in image_file_name_list:
+        save_index += 1
         img_source = cv2.imread(os.path.join(image_folder_path, image_file_name))
+
+        if img_source is None:
+            print("read image : " + image_file_name + " failed, skip this image.")
+            continue
 
         img = letterbox(img_source, new_shape=(640, 640), stride=stride)[0]
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
@@ -94,12 +103,14 @@ def detect():
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
 
+        start = time.time()
         # Inference
         #  visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if False else False
         pred = model(img, augment=False, visualize=False)[0]
 
         # NMS
         pred = non_max_suppression(pred, max_det=1000)
+        time_spend = time.time() - start
 
         # Process predictions
         for i, det in enumerate(pred):  # detections per image
@@ -122,12 +133,11 @@ def detect():
                     c = int(cls)  # integer class
 
                     label = None if False else (names[c] if False else f'{names[c]} {conf:.2f}')
-                    plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_thickness=3)
+                    plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
 
-            #  cv2.imshow("test", im0)
-            #  cv2.waitKey(0)
-            print(detect_result)
+            print(image_file_name + " : " + detect_result + " time : " + str(int(time_spend * 1000)) + "ms")
+        cv2.imwrite("/home/chli/baidu/output/test" + str(save_index) + ".jpg", im0)
 
 if __name__ == "__main__":
-    #  check_requirements(exclude=('tensorboard', 'thop'))
     detect()
+
