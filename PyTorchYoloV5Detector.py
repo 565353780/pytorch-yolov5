@@ -1,143 +1,140 @@
 import os
 import sys
-import time
 from pathlib import Path
 
-import numpy as np
 import cv2
+import numpy as np
 import torch
-#  import torch.backends.cudnn as cudnn
+import torch.backends.cudnn as cudnn
 
-FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+FILE = Path(__file__).resolve()
+ROOT = FILE.parents[0]  # YOLOv5 root directory
+if str(ROOT) not in sys.path:
+    sys.path.append(str(ROOT))  # add ROOT to PATH
+ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from utils.general import check_img_size, check_requirements, check_imshow, colorstr, non_max_suppression, \
-    apply_classifier, scale_coords, xyxy2xywh, strip_optimizer, set_logging, increment_path, save_one_box
-from utils.plots import colors, plot_one_box
-from utils.torch_utils import select_device, load_classifier, time_sync
+from utils.datasets import LoadImages, LoadStreams
+from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
+    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
+    strip_optimizer, xyxy2xywh
+from utils.plots import Annotator, colors
+from utils.torch_utils import load_classifier, select_device, time_sync
 
-def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
-    # Resize and pad image while meeting stride-multiple constraints
-    shape = im.shape[:2]  # current shape [height, width]
-    if isinstance(new_shape, int):
-        new_shape = (new_shape, new_shape)
+from flask import Flask
 
-    # Scale ratio (new / old)
-    r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
-    if not scaleup:  # only scale down, do not scale up (for better val mAP)
-        r = min(r, 1.0)
+app = Flask(__name__)
 
-    # Compute padding
-    ratio = r, r  # width, height ratios
-    new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
-    dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
-    if auto:  # minimum rectangle
-        dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
-    elif scaleFill:  # stretch
-        dw, dh = 0.0, 0.0
-        new_unpad = (new_shape[1], new_shape[0])
-        ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
+class PytorchYoloV5Detector:
+    def __init__(self):
+        self.reset()
+        return
 
-    dw /= 2  # divide padding into 2 sides
-    dh /= 2
+    def reset(self):
+        self.weights = None
+        self.imgsz = None
+        self.device = None
+        self.model = None
+        self.stride = None
+        self.names = None
+        self.half = False
+        self.bs = 1
+        return
 
-    if shape[::-1] != new_unpad:  # resize
-        im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
-    top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
-    left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
-    im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
-    return im, ratio, (dw, dh)
+    def loadModel(self, model_path, device):
+        self.weights = model_path
+        self.device = select_device(device)
+        self.imgsz = 640
+        self.stride = 64
+        self.half = True
+        self.bs = 1
 
-@torch.no_grad()
-def detect():
-    weights='./runs/train/exp/weights/best.pt' # model.pt path(s)
-    #  source='/home/chli/baidu/car_dataset/unmasked/'
-    imgsz=640 # inference size (pixels)
+        self.half &= self.device.type != 'cpu'
+        w = str(self.weights[0] if isinstance(self.weights, list) else self.weights)
+        pt = w.endswith('.pt')
+        self.names = [f'class{i}' for i in range(1000)]
+        self.model = torch.jit.load(w) if 'torchscript' in w else attempt_load(self.weights, map_location=device)
+        self.stride = int(self.model.stride.max())  # model stride
+        self.names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
+        if self.half:
+            self.model.half()
+        self.imgsz = check_img_size(self.imgsz, s=self.stride)
 
-    # Initialize
-    device = select_device('')
-    half = True
-    half &= device.type != 'cpu'  # half precision only supported on CUDA
+        # Run inference
+        if pt and self.device.type != 'cpu':
+            self.model(torch.zeros(1, 3, *self.imgsz).to(self.device).type_as(next(self.model.parameters())))
+        return
 
-    # Load model
-    w = weights[0] if isinstance(weights, list) else weights
-    pt = w.endswith('.pt') # inference type
-    stride, names = 64, [f'class{i}' for i in range(1000)]  # assign defaults
-    model = attempt_load(weights, map_location=device)  # load FP32 model
-    stride = int(model.stride.max())  # model stride
-    names = model.module.names if hasattr(model, 'module') else model.names  # get class names
-    if half:
-        model.half()  # to FP16
-    imgsz = check_img_size(imgsz, s=stride)  # check image size
+    def letterbox(self, im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleFill=False, scaleup=True, stride=32):
+        # Resize and pad image while meeting stride-multiple constraints
+        shape = im.shape[:2]  # current shape [height, width]
+        if isinstance(new_shape, int):
+            new_shape = (new_shape, new_shape)
 
-    bs = 1  # batch_size
+        # Scale ratio (new / old)
+        r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])
+        if not scaleup:  # only scale down, do not scale up (for better val mAP)
+            r = min(r, 1.0)
 
-    # Run inference
-    if pt and device.type != 'cpu':
-        model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
+        # Compute padding
+        ratio = r, r  # width, height ratios
+        new_unpad = int(round(shape[1] * r)), int(round(shape[0] * r))
+        dw, dh = new_shape[1] - new_unpad[0], new_shape[0] - new_unpad[1]  # wh padding
+        if auto:  # minimum rectangle
+            dw, dh = np.mod(dw, stride), np.mod(dh, stride)  # wh padding
+        elif scaleFill:  # stretch
+            dw, dh = 0.0, 0.0
+            new_unpad = (new_shape[1], new_shape[0])
+            ratio = new_shape[1] / shape[1], new_shape[0] / shape[0]  # width, height ratios
 
-    image_folder_path = '/home/chli/baidu/car_dataset/unmasked/'
+        dw /= 2  # divide padding into 2 sides
+        dh /= 2
 
-    image_file_name_list = os.listdir(image_folder_path)
+        if shape[::-1] != new_unpad:  # resize
+            im = cv2.resize(im, new_unpad, interpolation=cv2.INTER_LINEAR)
+        top, bottom = int(round(dh - 0.1)), int(round(dh + 0.1))
+        left, right = int(round(dw - 0.1)), int(round(dw + 0.1))
+        im = cv2.copyMakeBorder(im, top, bottom, left, right, cv2.BORDER_CONSTANT, value=color)  # add border
+        return im, ratio, (dw, dh)
 
-    save_index = 0
-    if not os.path.exists("/home/chli/baidu/output/"):
-        os.mkdir("/home/chli/baidu/output/")
-
-    for image_file_name in image_file_name_list:
-        save_index += 1
-        img_source = cv2.imread(os.path.join(image_folder_path, image_file_name))
-
-        if img_source is None:
-            print("read image : " + image_file_name + " failed, skip this image.")
-            continue
-
-        img = letterbox(img_source, new_shape=(640, 640), stride=stride)[0]
-        img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
+    @torch.no_grad()
+    def detect(self, image):
+        img = self.letterbox(image, self.imgsz, stride=self.stride, auto=True)[0]
+        img = np.stack(img, 0)
+        img = img.transpose((2, 0, 1))
         img = np.ascontiguousarray(img)
-
-        img = torch.from_numpy(img).to(device)
-        img = img.half() if half else img.float()  # uint8 to fp16/32
-        img /= 255.0  # 0 - 255 to 0.0 - 1.0
+        img = torch.from_numpy(img).to(self.device)
+        img = img.half() if self.half else img.float()
+        img /= 255.0
         if len(img.shape) == 3:
-            img = img[None]  # expand for batch dim
+            img = img[None]
 
-        start = time.time()
-        # Inference
-        #  visualize = increment_path(save_dir / Path(path).stem, mkdir=True) if False else False
-        pred = model(img, augment=False, visualize=False)[0]
-
-        # NMS
+        pred = self.model(img, augment=False, visualize=False)[0]
         pred = non_max_suppression(pred, max_det=1000)
-        time_spend = time.time() - start
 
-        # Process predictions
+        # [[xyxy, label_id, label, conf], ...]
+        result = []
+
         for i, det in enumerate(pred):  # detections per image
-            im0 = img_source.copy()
-
-            detect_result = ""
-
-            gn = torch.tensor(im0.shape)[[1, 0, 1, 0]]  # normalization gain whwh
+            im0 = image.copy()
             if len(det):
-                # Rescale boxes from img_size to im0 size
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
-                # Print results
-                for c in det[:, -1].unique():
-                    n = (det[:, -1] == c).sum()  # detections per class
-                    detect_result += str(int(n)) + " " + names[int(c.int())] + ", "
-
-                # Write results
                 for *xyxy, conf, cls in reversed(det):
-                    c = int(cls)  # integer class
+                    c = int(cls)
+                    result.append([
+                        [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])],
+                        c, self.names[c], float(conf)])
 
-                    label = None if False else (names[c] if False else f'{names[c]} {conf:.2f}')
-                    plot_one_box(xyxy, im0, label=label, color=colors(c, True), line_width=3)
+        return result
 
-            print(image_file_name + " : " + detect_result + " time : " + str(int(time_spend * 1000)) + "ms")
-        cv2.imwrite("/home/chli/baidu/output/test" + str(save_index) + ".jpg", im0)
+pytorch_yolov5_detector = PytorchYoloV5Detector()
+pytorch_yolov5_detector.loadModel('/home/chli/yolov5s.pt', 'cpu')
+
+@app.route('/detect')
+def detect_http(image):
+    return pytorch_yolov5_detector.detect(image)
 
 if __name__ == "__main__":
-    detect()
+    app.run(host='127.0.0.1', port=8828, debug=True)
 
