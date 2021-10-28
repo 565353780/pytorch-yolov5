@@ -21,11 +21,7 @@ from utils.general import apply_classifier, check_img_size, check_imshow, check_
 from utils.plots import Annotator, colors
 from utils.torch_utils import load_classifier, select_device, time_sync
 
-from flask import Flask
-
-app = Flask(__name__)
-
-class PytorchYoloV5Detector:
+class PyTorchYoloV5Detector:
     def __init__(self):
         self.reset()
         return
@@ -44,7 +40,7 @@ class PytorchYoloV5Detector:
     def loadModel(self, model_path, device):
         self.weights = model_path
         self.device = select_device(device)
-        self.imgsz = 640
+        self.imgsz = [640, 640]
         self.stride = 64
         self.half = True
         self.bs = 1
@@ -128,13 +124,28 @@ class PytorchYoloV5Detector:
 
         return result
 
-pytorch_yolov5_detector = PytorchYoloV5Detector()
-pytorch_yolov5_detector.loadModel('/home/chli/yolov5s.pt', 'cpu')
+    def test(self):
+        image_folder = "./sample_images/"
 
-@app.route('/detect')
-def detect_http(image):
-    return pytorch_yolov5_detector.detect(image)
+        image_file_list = os.listdir(image_folder)
+
+        for image_file_name in image_file_list:
+            if image_file_name[-4:] != ".jpg":
+                continue
+
+            print(image_folder + image_file_name)
+            image = cv2.imread(image_folder + image_file_name)
+
+            result = self.detect(image)
+
+            print("Image : " + image_file_name)
+            print("Result : ")
+            print(result)
+        return
 
 if __name__ == "__main__":
-    app.run(host='127.0.0.1', port=8828, debug=True)
+    pytorch_yolov5_detector = PyTorchYoloV5Detector()
+    pytorch_yolov5_detector.loadModel("./yolov5s.pt", "cuda:0")
+
+    pytorch_yolov5_detector.test()
 
