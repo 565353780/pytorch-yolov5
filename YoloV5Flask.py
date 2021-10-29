@@ -17,7 +17,7 @@ def getBytesFromSourceBytesStr(bytes_str):
     if "," in bytes_str_copy:
         bytes_str_cpoy = bytes_str_copy.split(",")[1]
 
-    if bytes_str_copy[0] == 'b':
+    if bytes_str_copy[:2] == 'b\'':
         bytes_str_copy = bytes_str_copy[2:-1]
 
     bytes_return = bytes(bytes_str_copy, encoding="utf-8")
