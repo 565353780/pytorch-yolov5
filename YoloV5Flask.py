@@ -3,7 +3,7 @@
 
 from PyTorchYoloV5Detector import PyTorchYoloV5Detector
 
-from flask import Flask, render_template, request, Response
+from flask import Flask, request, Response, make_response, jsonify
 import json
 import pandas as pd
 import cv2
@@ -36,11 +36,18 @@ def detect_http():
 
         bytes_return = getBytesFromSourceBytesStr(bytes_str)
 
-        img_b64decode = base64.b64decode(bytes_return)
+        image_data = base64.b64decode(bytes_return)
 
-        img_array = np.frombuffer(img_b64decode,np.uint8)
-        img = cv2.imdecode(img_array,cv2.COLOR_BGR2RGB)
-        print("input img shape",img.shape)
+        image_nparray = np.frombuffer(image_data, np.uint8)
+        image = cv2.imdecode(image_nparray, cv2.COLOR_BGR2RGB)
+        print("input image shape",image.shape)
+
+        result = pytorch_yolov5_detector.detect(image)
+
+        json_return = {}
+        json_return["Result"] = result
+
+        return make_response(jsonify(json_return, 403)
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=8828, debug=True)
