@@ -42,14 +42,13 @@ class PyTorchYoloV5Detector:
         self.device = select_device(device)
         self.imgsz = [640, 640]
         self.stride = 64
-        self.half = True
+        self.half = False
         self.bs = 1
 
         self.half &= self.device.type != 'cpu'
         w = str(self.weights[0] if isinstance(self.weights, list) else self.weights)
-        pt = w.endswith('.pt')
         self.names = [f'class{i}' for i in range(1000)]
-        self.model = torch.jit.load(w) if 'torchscript' in w else attempt_load(self.weights, map_location=device)
+        self.model = torch.jit.load(w) if 'torchscript' in w else attempt_load(self.weights, map_location=self.device)
         self.stride = int(self.model.stride.max())  # model stride
         self.names = self.model.module.names if hasattr(self.model, 'module') else self.model.names
         if self.half:
@@ -57,7 +56,7 @@ class PyTorchYoloV5Detector:
         self.imgsz = check_img_size(self.imgsz, s=self.stride)
 
         # Run inference
-        if pt and self.device.type != 'cpu':
+        if self.device.type != 'cpu':
             self.model(torch.zeros(1, 3, *self.imgsz).to(self.device).type_as(next(self.model.parameters())))
         return
 
@@ -95,9 +94,14 @@ class PyTorchYoloV5Detector:
 
     @torch.no_grad()
     def detect(self, image):
+        conf_thres=0.25 # confidence threshold
+        iou_thres=0.45 # NMS IOU threshold
+        classes = None
+        agnostic_nms=False # class-agnostic NMS
+        max_det=1000 # maximum detections per image
+
         img = self.letterbox(image, self.imgsz, stride=self.stride, auto=True)[0]
-        img = np.stack(img, 0)
-        img = img.transpose((2, 0, 1))
+        img = img.transpose((2, 0, 1))[::-1]
         img = np.ascontiguousarray(img)
         img = torch.from_numpy(img).to(self.device)
         img = img.half() if self.half else img.float()
@@ -105,8 +109,11 @@ class PyTorchYoloV5Detector:
         if len(img.shape) == 3:
             img = img[None]
 
+        print(img.shape)
+
         pred = self.model(img, augment=False, visualize=False)[0]
-        pred = non_max_suppression(pred, max_det=1000)
+        #  pred = non_max_suppression(pred, max_det=1000)
+        pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
 
         # [[xyxy, label_id, label, conf], ...]
         result = []
@@ -117,6 +124,7 @@ class PyTorchYoloV5Detector:
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                 for *xyxy, conf, cls in reversed(det):
+                    print("object : ", xyxy, cls, conf)
                     c = int(cls)
                     result.append([
                         [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])],
@@ -125,7 +133,7 @@ class PyTorchYoloV5Detector:
         return result
 
     def test(self):
-        image_folder = "./sample_images/"
+        image_folder = "/home/chli/"
 
         image_file_list = os.listdir(image_folder)
 
@@ -145,7 +153,7 @@ class PyTorchYoloV5Detector:
 
 if __name__ == "__main__":
     pytorch_yolov5_detector = PyTorchYoloV5Detector()
-    pytorch_yolov5_detector.loadModel("./yolov5s.pt", "cuda:0")
+    pytorch_yolov5_detector.loadModel("/home/chli/yolov5s.pt", "cpu")
 
     pytorch_yolov5_detector.test()
 
