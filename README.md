@@ -29,5 +29,11 @@ cd ../pytorch-yolov5
 python PyTorchYoloV5Detector.py
 ```
 
+### If Memory Error occured
+
+```bash
+sudo sh -c 'echo 1 > /proc/sys/vm/overcommit_memory'
+```
+
 ## Enjoy it~
 
