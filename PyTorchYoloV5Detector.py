@@ -109,8 +109,6 @@ class PyTorchYoloV5Detector:
         if len(img.shape) == 3:
             img = img[None]
 
-        print(img.shape)
-
         pred = self.model(img, augment=False, visualize=False)[0]
         #  pred = non_max_suppression(pred, max_det=1000)
         pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=max_det)
@@ -124,7 +122,6 @@ class PyTorchYoloV5Detector:
                 det[:, :4] = scale_coords(img.shape[2:], det[:, :4], im0.shape).round()
 
                 for *xyxy, conf, cls in reversed(det):
-                    print("object : ", xyxy, cls, conf)
                     c = int(cls)
                     result.append([
                         [int(xyxy[0]), int(xyxy[1]), int(xyxy[2]), int(xyxy[3])],
@@ -133,7 +130,7 @@ class PyTorchYoloV5Detector:
         return result
 
     def test(self):
-        image_folder = "/home/chli/"
+        image_folder = "./sample_images/"
 
         image_file_list = os.listdir(image_folder)
 
@@ -153,7 +150,7 @@ class PyTorchYoloV5Detector:
 
 if __name__ == "__main__":
     pytorch_yolov5_detector = PyTorchYoloV5Detector()
-    pytorch_yolov5_detector.loadModel("/home/chli/yolov5s.pt", "cpu")
+    pytorch_yolov5_detector.loadModel("./yolov5s.pt", "cuda:0")
 
     pytorch_yolov5_detector.test()
 
