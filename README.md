@@ -14,6 +14,7 @@ wget https://nvidia.box.com/shared/static/fjtbno0vpo676a25cgvuqc1wty0fkkg6.whl
 pip install -U future setuptools Cython
 pip install torch-<...>.whl
 pip install torchvision
+pip install matplotlib==3.2.2
 ```
 
 ## Run
