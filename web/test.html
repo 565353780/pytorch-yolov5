@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">		
+		<script src="https://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.0.js"></script>
+		<script src="detect.js"></script>
+
+		<style>
+			#main
+      {
+				border:2px black solid;			
+			}
+
+			canvas
+      {
+				position: absolute;
+				left: 0px;
+				top: 0px;
+			}
+
+			#frame
+      {
+				position: absolute;
+				left: 0px;
+				top: 0px;
+			}
+
+			video
+      {
+				display:block;
+				z-index:-1;
+			}
+			.center
+      {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+			}
+
+			#result
+      {
+				color:red;
+			}
+		</style>		
+	</head>
+
+	<body>
+		<div>	
+			<h1>Object Detect</h1>
+			<h2>captureSpeed:<input id="time" type='number' value=1 style='width: 70px;font-size: 25px;'></input>/s</h2>
+			<ul id="result"></ul>
+		</div>
+
+		<div id="cameraInfo" style='display:none;position:absolute;right:0px;top:0px;width:300px'>		
+			<h2>mediaDevices:<span id="mediaDevices"></span></h2>
+			<h2>platform:<span id="platform"></span></h2>
+			<h2>appCodeName:<span id="appCodeName"></span></h2>
+			<h2>appMinorVersion:<span id="appMinorVersion"></span></h2>
+			<h2>appName:<span id="appName"></span></h2>
+			<h2>appVersion:<span id="appVersion"></span></h2>
+			<h2>cpuClass:<span id="cpuClass"></span></h2>
+		</div>		
+
+		<div id="main" class="center">
+			<video id="video" autoplay="autoplay"></video>
+			<canvas id="canvas" desc="画布"></canvas>
+			<canvas id="frame" desc="画框"></canvas>
+		</div>		
+	</body>    
+</html>
+
