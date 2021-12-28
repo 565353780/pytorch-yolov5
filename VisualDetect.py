@@ -9,9 +9,6 @@ from JetsonCamera import JetsonCamera
 pytorch_yolov5_detector = PyTorchYoloV5Detector()
 pytorch_yolov5_detector.loadModel('./yolov5s.pt', 'cuda:0')
 
-jetson_camera = JetsonCamera()
-jetson_camera.loadCapture()
-
 while True:
     while not os.path.exists("./trans_camera.jpg"):
         continue
@@ -21,10 +18,10 @@ while True:
     result = pytorch_yolov5_detector.detect(image)
     result_stream = ""
     for single_object in result:
-        x_min, y_min, x_max, y_max = result[0]
-        label = result[1]
-        label_str = result[2]
-        score = result[3]
+        x_min, y_min, x_max, y_max = single_object[0]
+        label = single_object[1]
+        label_str = single_object[2]
+        score = single_object[3]
         result_stream += str(x_min) + "_"
         result_stream += str(y_min) + "_"
         result_stream += str(x_max) + "_"
