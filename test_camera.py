@@ -14,21 +14,13 @@ def gstreamer_pipeline(
     return (
         "nvarguscamerasrc ! "
         "video/x-raw(memory:NVMM), "
-        "width=(int)%d, height=(int)%d, "
-        "format=(string)NV12, framerate=(fraction)%d/1 ! "
-        "nvvidconv flip-method=%d ! "
-        "video/x-raw, width=(int)%d, height=(int)%d, format=(string)BGRx ! "
+        "width=" + str(int(capture_width)) + ", height=" + str(int(capture_height)) + ", "
+        "format=NV12, framerate=" + str(int(framerate)) + "/1 ! "
+        "nvvidconv flip-method=" + str(int(flip_method)) + " ! "
+        "video/x-raw, width=" + str(int(display_width)) + ", height=" + str(int(display_height)) + ", format=BGRx ! "
         "videoconvert ! "
-        "video/x-raw, format=(string)BGR ! appsink"
-        % (
-            capture_width,
-            capture_height,
-            framerate,
-            flip_method,
-            display_width,
-            display_height,
+        "video/x-raw, format=BGR ! appsink"
         )
-    )
 
 if __name__ == "__main__":
     capture_width = 1280
