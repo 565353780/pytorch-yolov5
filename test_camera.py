@@ -7,7 +7,9 @@ capture = cv2.VideoCapture(0)
 
 window_name = "Camera"
 
-while True:
+window_handle = cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
+
+while cv2.getWindowProperty(window_name, 0) >= 0:
     ret, frame = capture.read()
 
     if frame is None:
@@ -22,4 +24,5 @@ while True:
         break
 
 capture.release()
+cv2.destroyAllWindows()
 
