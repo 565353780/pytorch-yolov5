@@ -4,7 +4,7 @@
 from PyTorchYoloV5Detector import PyTorchYoloV5Detector
 from JetsonCamera import JetsonCamera
 import cv2
-from multiprocessing import Process
+from threading import Thread
 
 pytorch_yolov5_detector = PyTorchYoloV5Detector()
 pytorch_yolov5_detector.loadModel('./yolov5s.pt', 'cuda:0')
@@ -35,6 +35,6 @@ def detect_process():
         cv2.waitKey(1)
     return
 
-p = multiprocessing.Process(target=detect_process, args=())
-p.start()
+thread = Thread(target=detect_process, args=())
+thread.start()
 
