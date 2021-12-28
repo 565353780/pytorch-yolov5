@@ -12,6 +12,12 @@ def gstreamer_pipeline(
     flip_method=0,
 ):
     return (
+        "v4l2src device=/dev/video0 io-mode=2 ! " +
+        "image/jpeg, width=(int)" + str(capture_width) +", height=(int)" + str(capture_height) + " ! " +
+        "nvjpegdec ! " +
+        "video/x-raw, format=I420 ! " +
+        "appsink")
+    return (
         "nvarguscamerasrc ! "
         "video/x-raw(memory:NVMM), "
         "width=" + str(int(capture_width)) + ", height=" + str(int(capture_height)) + ", "
