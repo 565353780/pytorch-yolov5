@@ -10,6 +10,11 @@ window_name = "Camera"
 while True:
     ret, frame = capture.read()
 
+    if frame is None:
+        print("frame is None!")
+        break
+
+    print(frame.shape)
     cv2.imshow(window_name, frame)
 
     keyCode = cv2.waitKey(1) & 0xFF
