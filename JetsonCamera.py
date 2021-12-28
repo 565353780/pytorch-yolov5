@@ -68,4 +68,5 @@ if __name__ == "__main__":
         image = jetson_camera.grabImage()
         if image is not None:
             cv2.imshow("jetson camera", image)
+            cv2.waitKey(1)
 
