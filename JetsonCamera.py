@@ -75,7 +75,7 @@ if __name__ == "__main__":
         if image is None:
             break
         scale = 0.5
-        image = cv2.resize(image, (image.shape[1] * scale, image.shape[0] * scale))
+        image = cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
         cv2.imwrite("./trans_camera.jpg")
         while not os.path.exists("./trans_camera_result_ok.txt"):
             continue
