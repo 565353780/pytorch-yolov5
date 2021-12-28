@@ -13,6 +13,15 @@ jetson_camera.loadCapture()
 detecting_image = None
 realtime_iamge = None
 
+if os.path.exists("./trans_camera.jpg"):
+    os.remove("./trans_camera.jpg")
+if os.path.exists("./trans_camera_ok.txt"):
+    os.remove("./trans_camera_ok.txt")
+if os.path.exists("./trans_camera_result_ok.txt"):
+    os.remove("./trans_camera_result_ok.txt")
+if os.path.exists("./trans_camera_result_ok.txt"):
+    os.remove("./trans_camera_result_ok.txt")
+
 if jetson_camera.captureImage():
     realtime_iamge = jetson_camera.frame
     if realtime_iamge is None:
