@@ -10,7 +10,7 @@ from playsound import playsound
 User Edit Area Start
 '''
 
-scale = 0.5
+scale = 0.8
 
 def post_process(image, result):
     for single_object in result:
