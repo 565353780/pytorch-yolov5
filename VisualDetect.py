@@ -27,7 +27,7 @@ def post_process(image, result):
         cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
         cv2.putText(image,
                     str(label) + " " + label_str + " " + str(score),
-                    (x_min,y_min),
+                    (x_min,y_min - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
                     0.75,
                     (0, 255, 0),
