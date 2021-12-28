@@ -5,7 +5,6 @@ from pathlib import Path
 import cv2
 import numpy as np
 import torch
-import torch.backends.cudnn as cudnn
 
 FILE = Path(__file__).resolve()
 ROOT = FILE.parents[0]  # YOLOv5 root directory
@@ -14,12 +13,8 @@ if str(ROOT) not in sys.path:
 ROOT = Path(os.path.relpath(ROOT, Path.cwd()))  # relative
 
 from models.experimental import attempt_load
-from utils.datasets import LoadImages, LoadStreams
-from utils.general import apply_classifier, check_img_size, check_imshow, check_requirements, check_suffix, colorstr, \
-    increment_path, non_max_suppression, print_args, save_one_box, scale_coords, set_logging, \
-    strip_optimizer, xyxy2xywh
-from utils.plots import Annotator, colors
-from utils.torch_utils import load_classifier, select_device, time_sync
+from utils.general import check_img_size, non_max_suppression, scale_coords
+from utils.torch_utils import select_device
 
 class PyTorchYoloV5Detector:
     def __init__(self):
