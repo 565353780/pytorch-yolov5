@@ -3,56 +3,30 @@
 
 import cv2
 
-def gstreamer_pipeline(
-    capture_width=1280,
-    capture_height=720,
-    display_width=1280,
-    display_height=720,
-    framerate=60,
-    flip_method=0,
-):
-    return (
-        "v4l2src device=/dev/video0 io-mode=2 ! " +
-        "image/jpeg, width=(int)" + str(capture_width) +", height=(int)" + str(capture_height) + " ! " +
-        "nvjpegdec ! " +
-        "video/x-raw, format=I420 ! " +
-        "appsink")
-    return (
-        "nvarguscamerasrc ! "
-        "video/x-raw(memory:NVMM), "
-        "width=" + str(int(capture_width)) + ", height=" + str(int(capture_height)) + ", "
-        "format=NV12, framerate=" + str(int(framerate)) + "/1 ! "
-        "nvvidconv flip-method=" + str(int(flip_method)) + " ! "
-        "video/x-raw, width=" + str(int(display_width)) + ", height=" + str(int(display_height)) + ", format=BGRx ! "
-        "videoconvert ! "
-        "video/x-raw, format=BGR ! appsink"
-        )
+capture = cv2.VideoCapture(0)
+capture.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+capture.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*'MJPG'))
+capture.set(cv2.CAP_PROP_FPS, 60)
 
-if __name__ == "__main__":
-    capture_width = 1280
-    capture_height = 720
-    display_width = 1280
-    display_height = 720
-    framerate = 60
-    flip_method = 0
+window_name = "Camera"
 
-    print(gstreamer_pipeline(capture_width,capture_height,display_width,display_height,framerate,flip_method))
+window_handle = cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)
 
-    cap = cv2.VideoCapture(gstreamer_pipeline(), cv2.CAP_GSTREAMER)
+while cv2.getWindowProperty(window_name, 0) >= 0:
+    ret, frame = capture.read()
 
-    if cap.isOpened():
-        window_handle = cv2.namedWindow("CSI Camera", cv2.WINDOW_AUTOSIZE)
+    if frame is None:
+        print("frame is None!")
+        break
 
-        while cv2.getWindowProperty("CSI Camera", 0) >= 0:
-            ret_val, img = cap.read()
-            cv2.imshow("CSI Camera", img)
+    print(frame.shape)
+    cv2.imshow(window_name, frame)
 
-            keyCode = cv2.waitKey(30) & 0xFF
-            if keyCode == 27:# ESC
-                break
+    keyCode = cv2.waitKey(1) & 0xFF
+    if keyCode == 27:# ESC
+        break
 
-        cap.release()
-        cv2.destroyAllWindows()
-    else:
-        print("Open Camera Failed!")
+capture.release()
+cv2.destroyAllWindows()
 
