@@ -12,10 +12,14 @@ jetson_camera = JetsonCamera()
 jetson_camera.loadCapture()
 
 while True:
+    print("start get image")
     image = jetson_camera.grabImage()
+    print("finish get image")
+    print("start detect")
     if image is None:
         continue
     result = pytorch_yolov5_detector.detect(image)
+    print("finish detect")
     for single_object in result:
         x_min, y_min, x_max, y_max = result[0]
         label = result[1]
