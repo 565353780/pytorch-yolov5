@@ -17,6 +17,7 @@ while True:
     print("start load image...", end="")
     image = cv2.imread("./trans_camera.jpg")
     os.remove("./trans_camera.jpg")
+    os.remove("./trans_camera_ok.txt")
     if image is None:
         print("image is None!!!!")
         break
