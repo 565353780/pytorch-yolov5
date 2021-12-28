@@ -25,7 +25,8 @@ if os.path.exists("./trans_camera_result_ok.txt"):
 if jetson_camera.captureImage():
     realtime_iamge = jetson_camera.frame
     if realtime_iamge is None:
-        break
+        print("image is None!!!!")
+        exit()
     realtime_iamge = cv2.resize(realtime_iamge,
                                 (int(realtime_iamge.shape[1] * scale), int(realtime_iamge.shape[0] * scale)))
     detecting_image = realtime_iamge
