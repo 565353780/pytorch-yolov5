@@ -18,6 +18,9 @@ while cv2.getWindowProperty(window_name, 0) >= 0:
         new_height=int(height * new_width / width)
         img = cv2.resize(img, (new_width,new_height))
 
+    cv2.imwrite("test.jpg", img)
+    exit()
+
     cv2.imshow(window_name, img)
 
     keyCode = cv2.waitKey(30) & 0xFF
