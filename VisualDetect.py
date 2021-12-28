@@ -15,8 +15,8 @@ window_name = "Visual Detect"
 cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 cv2.setWindowProperty(window_name, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
-while True:
-    image = jetson_camera.grabImage()
+while jetson_camera.captureImage():
+    image = jetson_camera.frame
     if image is None:
         break
     scale = 0.5

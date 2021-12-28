@@ -15,17 +15,6 @@ class JetsonCamera(object):
         self.frame = None
         return
 
-    def update(self):
-        while True:
-            if self.capture.isOpened():
-                self.status, self.frame = self.capture.read()
-
-    def startCaptureThread(self):
-        self.thread = Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
-        return True
-
     def loadCapture(self,
                   capture_width=1280,
                   capture_height=720,
@@ -53,8 +42,23 @@ class JetsonCamera(object):
         )
 
         self.capture = cv2.VideoCapture(self.gstream_param, cv2.CAP_GSTREAMER)
+        return True
 
-        self.startCaptureThread()
+    def captureImage(self):
+        if not self.capture.isOpened():
+            return False
+
+        self.status, self.frame = self.capture.read()
+        return True
+
+    def update(self):
+        while True:
+            self.captureImage()
+
+    def startCaptureThread(self):
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
         return True
 
     def grabImage(self):
@@ -65,8 +69,8 @@ class JetsonCamera(object):
 if __name__ == "__main__":
     jetson_camera = JetsonCamera()
     jetson_camera.loadCapture()
-    while True:
-        image = jetson_camera.grabImage()
+    while jetson_camera.captureImage():
+        image = jetson_camera.frame
         if image is None:
             break
         cv2.imshow("jetson camera", image)
