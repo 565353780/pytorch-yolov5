@@ -1,5 +1,6 @@
 //	let detectURL = "https://api-oelink-sgmw-dev.servision.com.cn/detect";
-let detectURL = "https://111.28.150.83:8800/detect";
+// let detectURL = "https://127.0.0.1:8800/detect";
+let detectURL = "127.0.0.1:8800/detect";
 $(function()
 {
   let audio = $("<audio  autoplay='autoplay' id='auto' ></audio>");

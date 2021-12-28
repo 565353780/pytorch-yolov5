@@ -50,5 +50,5 @@ def detect_http():
         return make_response(jsonify(json_return), 500)
 
 if __name__ == "__main__":
-    app.run(host='127.0.0.1', port=8828, debug=True)
+    app.run(host='127.0.0.1', port=8800, debug=True)
 
