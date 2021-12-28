@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 
 import cv2
-import multiprocessing
+from threading import Thread
 
 class JetsonCamera(object):
     def __init__(self):
         self.gstream_param = None
 
-        self.proc = None
+        self.thread = None
 
         self.capture = None
         self.status = None
@@ -19,12 +19,11 @@ class JetsonCamera(object):
         while True:
             if self.capture.isOpened():
                 self.status, self.frame = self.capture.read()
-                #  if not self.status:
-                    #  return
 
     def startCaptureThread(self):
-        self.proc = multiprocessing.Process(target=self.update, args=())
-        self.proc.start()
+        self.thread = Thread(target=self.update, args=())
+        self.thread.daemon = True
+        self.thread.start()
         return True
 
     def loadCapture(self,

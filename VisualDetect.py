@@ -15,6 +15,7 @@ while True:
     if image is None:
         continue
     result = pytorch_yolov5_detector.detect(image)
+    print("get result:")
     for single_object in result:
         print(single_object)
     exit()
