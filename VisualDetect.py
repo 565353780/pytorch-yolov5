@@ -8,21 +8,29 @@ from JetsonCamera import JetsonCamera
 jetson_camera = JetsonCamera()
 jetson_camera.loadCapture()
 while jetson_camera.captureImage():
-    print("start get camera image...")
+    print("start get camera image...", end="")
     image = jetson_camera.frame
     if image is None:
         break
     scale = 0.5
     image = cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
-    print("\t finish get camera image!")
-    print("start write image...")
+    print("finished!")
+
+    print("start write image...", end="")
     cv2.imwrite("./trans_camera.jpg", image)
-    print("\t finish write image!")
-    print("start wait DetectSaver...")
+    print("finished!")
+
+    print("start send signal to DetectSaver...")
+    file = open("./trans_camera_ok.txt", "w")
+    file.close()
+    print("finished!")
+
+    print("start wait DetectSaver...", end="")
     while not os.path.exists("./trans_camera_result_ok.txt"):
         continue
-    print("\t get saved detect result!")
-    print("start draw result...")
+    print("finished!")
+
+    print("start draw result...", end="")
     with open("./trans_camera_result.txt", "r") as f:
         result = f.readlines()
         for single_object in result:
@@ -39,7 +47,7 @@ while jetson_camera.captureImage():
             cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
     os.remove("./trans_camera_result.txt")
     os.remove("./trans_camera_result_ok.txt")
-    print("\t finish draw result!")
+    print("finished!")
     cv2.imshow("jetson camera", image)
     cv2.waitKey(1)
 

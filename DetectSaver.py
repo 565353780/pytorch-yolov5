@@ -9,19 +9,24 @@ pytorch_yolov5_detector = PyTorchYoloV5Detector()
 pytorch_yolov5_detector.loadModel('./yolov5s.pt', 'cuda:0')
 
 while True:
-    print("start wait image...")
-    while not os.path.exists("./trans_camera.jpg"):
+    print("start wait image...", end="")
+    while not os.path.exists("./trans_camera_ok.txt"):
         continue
-    print("\t found image!")
+    print("finished!")
+
+    print("start load image...", end="")
     image = cv2.imread("./trans_camera.jpg")
     os.remove("./trans_camera.jpg")
     if image is None:
         print("image is None!!!!")
         break
-    print("start detect...")
+    print("finished!")
+
+    print("start detect...", end="")
     result = pytorch_yolov5_detector.detect(image)
-    print("\t get " + str(len(result)) + " result!")
-    print("start write result...")
+    print("finished!")
+
+    print("start write result...", end="")
     result_stream = ""
     for single_object in result:
         x_min, y_min, x_max, y_max = single_object[0]
@@ -37,9 +42,10 @@ while True:
         result_stream += str(score) + "\n"
     with open("./trans_camera_result.txt", "w") as f:
         f.write(result_stream)
-    print("\t finish write result!")
-    print("start send signal to VisualDetect...")
+    print("finished!")
+
+    print("start send signal to VisualDetect...", end="")
     file = open("./trans_camera_result_ok.txt", "w")
     file.close()
-    print("\t finish send signal!")
+    print("finished!")
 
