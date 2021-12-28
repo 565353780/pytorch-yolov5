@@ -2,18 +2,30 @@
 # -*- coding: utf-8 -*-
 
 import cv2
-from threading import Thread
+import multiprocessing
 
 class JetsonCamera(object):
     def __init__(self):
         self.gstream_param = None
 
-        self.thread = None
+        self.proc = None
 
         self.capture = None
         self.status = None
         self.frame = None
         return
+
+    def update(self):
+        while True:
+            if self.capture.isOpened():
+                self.status, self.frame = self.capture.read()
+                #  if not self.status:
+                    #  return
+
+    def startCaptureThread(self):
+        self.proc = multiprocessing.Process(target=self.update, args=())
+        self.proc.start()
+        return True
 
     def loadCapture(self,
                   capture_width=1280,
@@ -42,17 +54,8 @@ class JetsonCamera(object):
         )
 
         self.capture = cv2.VideoCapture(self.gstream_param, cv2.CAP_GSTREAMER)
-        return True
 
-    def update(self):
-        while True:
-            if self.capture.isOpened():
-                self.status, self.frame = self.capture.read()
-
-    def startCaptureThread(self):
-        self.thread = Thread(target=self.update, args=())
-        self.thread.daemon = True
-        self.thread.start()
+        self.startCaptureThread()
         return True
 
     def grabImage(self):
@@ -62,11 +65,11 @@ class JetsonCamera(object):
 
 if __name__ == "__main__":
     jetson_camera = JetsonCamera()
-    jetson_camera.loadCapture(1280, 720, 1280, 720, 60, 0)
-    jetson_camera.startCaptureThread()
+    jetson_camera.loadCapture()
     while True:
         image = jetson_camera.grabImage()
-        if image is not None:
-            cv2.imshow("jetson camera", image)
-            cv2.waitKey(1)
+        if image is None:
+            continue
+        cv2.imshow("jetson camera", image)
+        cv2.waitKey(1)
 
