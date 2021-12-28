@@ -76,7 +76,7 @@ if __name__ == "__main__":
             break
         scale = 0.5
         image = cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
-        cv2.imwrite("./trans_camera.jpg")
+        cv2.imwrite("./trans_camera.jpg", image)
         while not os.path.exists("./trans_camera_result_ok.txt"):
             continue
         with open("./trans_camera_result.txt", "r") as f:
