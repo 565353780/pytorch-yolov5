@@ -25,6 +25,14 @@ def post_process(image, result):
         label_str = single_object_split[5]
         score = float(single_object_split[6])
         cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
+        cv2.putText(image,
+                    str(label) + " " + label_str + " " + str(score),
+                    (x_min,y_min),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.75,
+                    (0, 255, 0),
+                    1,
+                    cv2.LINE_AA)
 
     #  if "Seat belt" not in result:
         #  playsound("./tip.mp3")
