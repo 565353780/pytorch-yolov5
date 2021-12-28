@@ -5,32 +5,35 @@ import os
 import cv2
 from JetsonCamera import JetsonCamera
 
+scale = 0.5
+
 jetson_camera = JetsonCamera()
 jetson_camera.loadCapture()
-while jetson_camera.captureImage():
-    print("start get camera image...", end="")
-    image = jetson_camera.frame
-    if image is None:
+
+detecting_image = None
+realtime_iamge = None
+
+if jetson_camera.captureImage():
+    realtime_iamge = jetson_camera.frame
+    if realtime_iamge is None:
         break
-    scale = 0.5
-    image = cv2.resize(image, (int(image.shape[1] * scale), int(image.shape[0] * scale)))
-    print("finished!")
-
-    print("start write image...", end="")
-    cv2.imwrite("./trans_camera.jpg", image)
-    print("finished!")
-
-    print("start send signal to DetectSaver...")
+    realtime_iamge = cv2.resize(realtime_iamge,
+                                (int(realtime_iamge.shape[1] * scale), int(realtime_iamge.shape[0] * scale)))
+    detecting_image = realtime_iamge
+    cv2.imwrite("./trans_camera.jpg", detecting_image)
     file = open("./trans_camera_ok.txt", "w")
     file.close()
-    print("finished!")
 
-    print("start wait DetectSaver...", end="")
-    while not os.path.exists("./trans_camera_result_ok.txt"):
+while jetson_camera.captureImage():
+    realtime_iamge = jetson_camera.frame
+    if realtime_iamge is None:
+        break
+    realtime_iamge = cv2.resize(realtime_iamge,
+                                (int(realtime_iamge.shape[1] * scale), int(realtime_iamge.shape[0] * scale)))
+
+    if not os.path.exists("./trans_camera_result_ok.txt"):
         continue
-    print("finished!")
 
-    print("start draw result...", end="")
     with open("./trans_camera_result.txt", "r") as f:
         result = f.readlines()
         for single_object in result:
@@ -44,10 +47,13 @@ while jetson_camera.captureImage():
             label = int(single_object_split[4])
             label_str = single_object_split[5]
             score = float(single_object_split[6])
-            cv2.rectangle(image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
+            cv2.rectangle(detecting_image, (x_min, y_min), (x_max, y_max), (0, 0, 255), 2)
     os.remove("./trans_camera_result.txt")
     os.remove("./trans_camera_result_ok.txt")
-    print("finished!")
-    cv2.imshow("jetson camera", image)
+    cv2.imwrite("./trans_camera.jpg", realtime_iamge)
+    cv2.imshow("jetson camera", detecting_image)
     cv2.waitKey(1)
+    detecting_image = realtime_iamge
+    file = open("./trans_camera_ok.txt", "w")
+    file.close()
 
