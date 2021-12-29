@@ -247,3 +247,11 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+
+# signal file
+trans_camera.jpg
+trans_camera_ok.txt
+trans_camera_result.txt
+trans_camera_result_ok.txt
+play_sound.txt
+
